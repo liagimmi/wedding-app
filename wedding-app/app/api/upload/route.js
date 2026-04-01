@@ -1,4 +1,4 @@
-import { uploadBufferToDrive } from '../../lib/googleDrive';
+import { uploadBufferToDrive } from '../../../lib/googleDrive';
 
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 const VIDEO_TYPES = new Set([
