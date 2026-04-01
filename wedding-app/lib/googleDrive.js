@@ -11,8 +11,7 @@ function getEnv(name) {
 
 function buildAuth() {
   const clientEmail = getEnv('GOOGLE_CLIENT_EMAIL');
-  const privateKey = getEnv('GOOGLE_PRIVATE_KEY').replace(/\\n/g, '\n');
-
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
   return new google.auth.JWT({
     email: clientEmail,
     key: privateKey,
