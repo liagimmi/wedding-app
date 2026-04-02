@@ -141,67 +141,78 @@ export default function HomePage() {
   function startRecording() {
     try {
       if (!streamRef.current) return;
-
+  
       resetPreview();
-
-      let mimeType = '';
-      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
-        mimeType = 'video/webm;codecs=vp9,opus';
-      } else if (MediaRecorder.isTypeSupported('video/webm')) {
-        mimeType = 'video/webm';
-      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
-        mimeType = 'video/mp4';
-      }
-
+  
+      const candidates = [
+        'video/mp4',
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm'
+      ];
+  
+      const selectedMimeType = candidates.find((type) => {
+        try {
+          return MediaRecorder.isTypeSupported(type);
+        } catch {
+          return false;
+        }
+      });
+  
       chunksRef.current = [];
-      const recorder = mimeType
-        ? new MediaRecorder(streamRef.current, { mimeType })
+  
+      const recorder = selectedMimeType
+        ? new MediaRecorder(streamRef.current, { mimeType: selectedMimeType })
         : new MediaRecorder(streamRef.current);
-
+  
       mediaRecorderRef.current = recorder;
-
+  
       recorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
           chunksRef.current.push(event.data);
         }
       };
-
+  
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, {
-          type: recorder.mimeType || 'video/webm'
-        });
-
-        const extension = blob.type.includes('mp4') ? 'mp4' : 'webm';
+        const blobType = recorder.mimeType || selectedMimeType || 'video/mp4';
+        const blob = new Blob(chunksRef.current, { type: blobType });
+  
+        let extension = 'mp4';
+        if (blobType.includes('webm')) extension = 'webm';
+        else if (blobType.includes('quicktime')) extension = 'mov';
+        else if (blobType.includes('ogg')) extension = 'ogg';
+  
         const file = new File([blob], `video_${Date.now()}.${extension}`, {
-          type: blob.type || 'video/webm'
+          type: blobType
         });
+  
         const url = URL.createObjectURL(file);
-
         setCapturedFile(file);
         setPreviewUrl(url);
         setStatus('Video pronto. Premi “Carica” per salvarlo.');
+        setError('');
       };
 
-      recorder.start(250);
-      setIsRecording(true);
-      setRecordSeconds(0);
-      setStatus('Registrazione in corso...');
-      setError('');
+    recorder.start(250);
+    setIsRecording(true);
+    setRecordSeconds(0);
+    setStatus('Registrazione in corso...');
+    setError('');
 
-      timerRef.current = setInterval(() => {
-        setRecordSeconds((current) => {
-          const next = current + 1;
-          if (next >= MAX_VIDEO_SECONDS) {
-            stopRecording();
-          }
-          return next;
-        });
-      }, 1000);
-    } catch (err) {
-      console.error(err);
-      setError('Il browser non supporta la registrazione video in questo formato.');
-    }
+    timerRef.current = setInterval(() => {
+      setRecordSeconds((current) => {
+        const next = current + 1;
+        if (next >= MAX_VIDEO_SECONDS) {
+          stopRecording();
+        }
+        return next;
+      });
+    }, 1000);
+  } catch (err) {
+    console.error(err);
+    setError('Il browser non supporta la registrazione video su questo dispositivo.');
   }
+}
 
   function stopRecording() {
     clearInterval(timerRef.current);
