@@ -235,6 +235,13 @@ export default function HomePage() {
     setStatus('Caricamento in corso...');
 
     try {
+      const maxMb = 150;
+      const maxBytes = maxMb * 1024 * 1024;
+  
+      if (capturedFile.size > maxBytes) {
+        throw new Error(`Il file supera il limite di ${maxMb} MB`);
+      }
+      
       const formData = new FormData();
       formData.append('media', capturedFile);
 
