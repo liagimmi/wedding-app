@@ -22,50 +22,67 @@ export default function HomePage() {
   const [capturedFile, setCapturedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [lastUploadedName, setLastUploadedName] = useState('');
+  const [cameraMode, setCameraMode] = useState('environment');
 
   const canUpload = useMemo(() => !!capturedFile && !uploading, [capturedFile, uploading]);
+
+  async function setupCamera(mode = cameraMode) {
+    try {
+      setError('');
+      setStatus('Inizializzazione fotocamera...');
+      setIsCameraReady(false);
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: mode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: true
+      });
+
+      streamRef.current = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      setIsCameraReady(true);
+      setStatus('Fotocamera pronta.');
+    } catch (err) {
+      console.error(err);
+      setIsCameraReady(false);
+      setError('Non riesco ad accedere a fotocamera o microfono. Controlla i permessi del browser.');
+      setStatus('Accesso non disponibile.');
+    }
+  }
 
   useEffect(() => {
     let revokedUrl = '';
 
-    async function setupCamera() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: 'environment' },
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          },
-          audio: true
-        });
-
-        streamRef.current = stream;
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
-
-        setIsCameraReady(true);
-        setStatus('Fotocamera pronta.');
-        setError('');
-      } catch (err) {
-        console.error(err);
-        setError('Non riesco ad accedere a fotocamera o microfono. Controlla i permessi del browser.');
-        setStatus('Accesso non disponibile.');
-      }
-    }
-
-    setupCamera();
+    setupCamera(cameraMode);
 
     return () => {
       clearInterval(timerRef.current);
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.stop();
+      }
+
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
+
       if (previewUrl) {
         revokedUrl = previewUrl;
       }
+
       if (revokedUrl) {
         URL.revokeObjectURL(revokedUrl);
       }
@@ -81,15 +98,25 @@ export default function HomePage() {
     setLastUploadedName('');
   }
 
+  async function toggleCamera() {
+    if (isRecording || uploading) return;
+
+    const nextMode = cameraMode === 'environment' ? 'user' : 'environment';
+    setCameraMode(nextMode);
+    await setupCamera(nextMode);
+  }
+
   async function takePhoto() {
     try {
       if (!videoRef.current) return;
+
       resetPreview();
 
       const video = videoRef.current;
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth || 1280;
       canvas.height = video.videoHeight || 720;
+
       const context = canvas.getContext('2d');
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
@@ -104,6 +131,7 @@ export default function HomePage() {
       setCapturedFile(file);
       setPreviewUrl(url);
       setStatus('Foto pronta. Premi “Carica” per salvarla.');
+      setError('');
     } catch (err) {
       console.error(err);
       setError('Errore durante lo scatto della foto.');
@@ -113,14 +141,23 @@ export default function HomePage() {
   function startRecording() {
     try {
       if (!streamRef.current) return;
+
       resetPreview();
 
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-        ? 'video/webm;codecs=vp9,opus'
-        : 'video/webm';
+      let mimeType = '';
+      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+        mimeType = 'video/webm;codecs=vp9,opus';
+      } else if (MediaRecorder.isTypeSupported('video/webm')) {
+        mimeType = 'video/webm';
+      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+        mimeType = 'video/mp4';
+      }
 
       chunksRef.current = [];
-      const recorder = new MediaRecorder(streamRef.current, { mimeType });
+      const recorder = mimeType
+        ? new MediaRecorder(streamRef.current, { mimeType })
+        : new MediaRecorder(streamRef.current);
+
       mediaRecorderRef.current = recorder;
 
       recorder.ondataavailable = (event) => {
@@ -130,10 +167,16 @@ export default function HomePage() {
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'video/webm' });
+        const blob = new Blob(chunksRef.current, {
+          type: recorder.mimeType || 'video/webm'
+        });
+
         const extension = blob.type.includes('mp4') ? 'mp4' : 'webm';
-        const file = new File([blob], `video_${Date.now()}.${extension}`, { type: blob.type || 'video/webm' });
+        const file = new File([blob], `video_${Date.now()}.${extension}`, {
+          type: blob.type || 'video/webm'
+        });
         const url = URL.createObjectURL(file);
+
         setCapturedFile(file);
         setPreviewUrl(url);
         setStatus('Video pronto. Premi “Carica” per salvarlo.');
@@ -143,6 +186,8 @@ export default function HomePage() {
       setIsRecording(true);
       setRecordSeconds(0);
       setStatus('Registrazione in corso...');
+      setError('');
+
       timerRef.current = setInterval(() => {
         setRecordSeconds((current) => {
           const next = current + 1;
@@ -186,6 +231,7 @@ export default function HomePage() {
       });
 
       const payload = await response.json();
+
       if (!response.ok) {
         throw new Error(payload.error || 'Upload fallito');
       }
@@ -193,6 +239,7 @@ export default function HomePage() {
       setLastUploadedName(payload.fileName);
       setStatus('Upload completato con successo.');
       setCapturedFile(null);
+
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
       }
@@ -209,44 +256,118 @@ export default function HomePage() {
   function onManualPick(event) {
     const file = event.target.files?.[0];
     if (!file) return;
+
     resetPreview();
     setCapturedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
     setStatus('File selezionato. Premi “Carica” per salvarlo.');
+    setError('');
   }
 
   return (
     <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 16 }}>
-      <div style={{ width: '100%', maxWidth: 720, background: '#fff', borderRadius: 24, padding: 20, boxShadow: '0 12px 36px rgba(0,0,0,0.08)' }}>
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 720,
+          background: '#fff',
+          borderRadius: 24,
+          padding: 20,
+          boxShadow: '0 12px 36px rgba(0,0,0,0.08)'
+        }}
+      >
         <header style={{ textAlign: 'center', marginBottom: 20 }}>
-          <p style={{ margin: 0, letterSpacing: 2, fontSize: 12, textTransform: 'uppercase', color: '#836953' }}>Benvenuti</p>
+          <p
+            style={{
+              margin: 0,
+              letterSpacing: 2,
+              fontSize: 12,
+              textTransform: 'uppercase',
+              color: '#836953'
+            }}
+          >
+            Benvenuti
+          </p>
           <h1 style={{ margin: '8px 0 6px', fontSize: 32 }}>{APP_NAME}</h1>
-          <p style={{ margin: 0, color: '#555' }}>Scatta una foto o registra un video per lasciare un ricordo agli sposi.</p>
+          <p style={{ margin: 0, color: '#555' }}>
+            Scatta una foto o registra un video per lasciare un ricordo agli sposi.
+          </p>
         </header>
 
         <div style={{ display: 'grid', gap: 16 }}>
-          <div style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', background: '#111', aspectRatio: '3 / 4' }}>
-            <video ref={videoRef} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <div
+            style={{
+              position: 'relative',
+              borderRadius: 20,
+              overflow: 'hidden',
+              background: '#111',
+              aspectRatio: '3 / 4'
+            }}
+          >
+            <video
+              ref={videoRef}
+              muted
+              playsInline
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+
             {!isCameraReady && (
-              <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#fff', padding: 16, textAlign: 'center' }}>
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: '#fff',
+                  padding: 16,
+                  textAlign: 'center'
+                }}
+              >
                 <span>{status}</span>
               </div>
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12 }}>
-            <button onClick={takePhoto} disabled={!isCameraReady || isRecording || uploading} style={buttonStyle}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+              gap: 12
+            }}
+          >
+            <button
+              onClick={takePhoto}
+              disabled={!isCameraReady || isRecording || uploading}
+              style={buttonStyle}
+            >
               Scatta foto
             </button>
+
             {!isRecording ? (
-              <button onClick={startRecording} disabled={!isCameraReady || uploading} style={buttonStyle}>
+              <button
+                onClick={startRecording}
+                disabled={!isCameraReady || uploading}
+                style={buttonStyle}
+              >
                 Registra video
               </button>
             ) : (
-              <button onClick={stopRecording} style={{ ...buttonStyle, background: '#8a1c1c', color: '#fff' }}>
+              <button
+                onClick={stopRecording}
+                style={{ ...buttonStyle, background: '#8a1c1c', color: '#fff' }}
+              >
                 Ferma ({recordSeconds}s)
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={toggleCamera}
+              disabled={!isCameraReady || isRecording || uploading}
+              style={ghostButtonStyle}
+            >
+              {cameraMode === 'environment' ? 'Camera frontale' : 'Camera posteriore'}
+            </button>
           </div>
 
           <button
@@ -257,6 +378,7 @@ export default function HomePage() {
           >
             Oppure scegli da galleria
           </button>
+
           <input
             ref={fileInputRef}
             type="file"
@@ -269,10 +391,20 @@ export default function HomePage() {
           {previewUrl && (
             <div style={{ padding: 14, background: '#f7f2ea', borderRadius: 18 }}>
               <p style={{ marginTop: 0, marginBottom: 10, fontWeight: 700 }}>Anteprima</p>
+
               {capturedFile?.type.startsWith('image/') ? (
-                <img src={previewUrl} alt="Anteprima contenuto" style={{ width: '100%', borderRadius: 16 }} />
+                <img
+                  src={previewUrl}
+                  alt="Anteprima contenuto"
+                  style={{ width: '100%', borderRadius: 16 }}
+                />
               ) : (
-                <video src={previewUrl} controls playsInline style={{ width: '100%', borderRadius: 16 }} />
+                <video
+                  src={previewUrl}
+                  controls
+                  playsInline
+                  style={{ width: '100%', borderRadius: 16 }}
+                />
               )}
             </div>
           )}
@@ -281,11 +413,20 @@ export default function HomePage() {
             {uploading ? 'Caricamento...' : 'Carica su Drive'}
           </button>
 
-          <div style={{ background: '#fcfaf7', border: '1px solid #eee4d8', borderRadius: 18, padding: 14 }}>
+          <div
+            style={{
+              background: '#fcfaf7',
+              border: '1px solid #eee4d8',
+              borderRadius: 18,
+              padding: 14
+            }}
+          >
             <p style={{ margin: 0, fontWeight: 700 }}>Stato</p>
             <p style={{ marginBottom: 0, color: '#444' }}>{status}</p>
             {error ? <p style={{ marginBottom: 0, color: '#b00020' }}>{error}</p> : null}
-            {lastUploadedName ? <p style={{ marginBottom: 0, color: '#22663d' }}>File salvato: {lastUploadedName}</p> : null}
+            {lastUploadedName ? (
+              <p style={{ marginBottom: 0, color: '#22663d' }}>File salvato: {lastUploadedName}</p>
+            ) : null}
           </div>
         </div>
       </div>
