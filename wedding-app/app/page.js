@@ -235,7 +235,7 @@ export default function HomePage() {
     setStatus('Caricamento in corso...');
 
     try {
-      const maxMb = 150;
+      const maxMb = 1024;
       const maxBytes = maxMb * 1024 * 1024;
   
       if (capturedFile.size > maxBytes) {
