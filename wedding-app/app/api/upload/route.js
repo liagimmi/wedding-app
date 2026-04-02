@@ -46,12 +46,12 @@ export async function POST(request) {
 
     const mimeType = (file.type || '').toLowerCase().trim();
     const extension = file.name.includes('.')
-    ? file.name.split('.').pop().toLowerCase().trim()
-    : '';
+      ? file.name.split('.').pop().toLowerCase().trim()
+      : '';
 
     const isAllowedByMime = IMAGE_TYPES.has(mimeType) || VIDEO_TYPES.has(mimeType);
     const isAllowedByExtension =
-    IMAGE_EXTENSIONS.has(extension) || VIDEO_EXTENSIONS.has(extension);
+      IMAGE_EXTENSIONS.has(extension) || VIDEO_EXTENSIONS.has(extension);
 
     if (!isAllowedByMime && !isAllowedByExtension) {
       return Response.json(
@@ -60,23 +60,23 @@ export async function POST(request) {
       );
     }
 
-const isImage =
-  mimeType.startsWith('image/') || IMAGE_EXTENSIONS.has(extension);
+    const isImage =
+      mimeType.startsWith('image/') || IMAGE_EXTENSIONS.has(extension);
 
-const finalExtension =
-  extension || (isImage ? 'jpg' : 'mp4');
+    const finalExtension =
+      extension || (isImage ? 'jpg' : 'mp4');
 
-const mediaType = isImage ? 'photo' : 'video';
-    const extension = file.name.includes('.') ? file.name.split('.').pop() : (mimeType.startsWith('image/') ? 'jpg' : 'webm');
-    const mediaType = mimeType.startsWith('image/') ? 'photo' : 'video';
-    const fileName = sanitizeFileName(`wedding_${mediaType}_${Date.now()}.${extension}`);
+    const mediaType = isImage ? 'photo' : 'video';
+
+    const uniqueId = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const fileName = sanitizeFileName(`wedding_${mediaType}_${uniqueId}.${finalExtension}`);
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
     const uploaded = await uploadBufferToDrive({
       buffer,
-      mimeType,
+      mimeType: mimeType || (isImage ? 'image/jpeg' : 'video/mp4'),
       fileName
     });
 
