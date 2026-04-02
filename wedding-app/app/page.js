@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'Wedding Memories';
-const MAX_VIDEO_SECONDS = 60;
+const MAX_VIDEO_SECONDS = 120;
 
 export default function HomePage() {
   const videoRef = useRef(null);
