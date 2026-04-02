@@ -145,9 +145,11 @@ export default function HomePage() {
       resetPreview();
   
       const candidates = [
+        'video/mp4;codecs=h264,aac',
+        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
         'video/mp4',
-        'video/webm;codecs=vp9,opus',
         'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=vp9,opus',
         'video/webm'
       ];
   
@@ -174,16 +176,16 @@ export default function HomePage() {
       };
   
       recorder.onstop = () => {
-        const blobType = recorder.mimeType || selectedMimeType || 'video/mp4';
-        const blob = new Blob(chunksRef.current, { type: blobType });
+        const actualMimeType = recorder.mimeType || selectedMimeType || 'video/mp4';
+        const blob = new Blob(chunksRef.current, { type: actualMimeType });
   
         let extension = 'mp4';
-        if (blobType.includes('webm')) extension = 'webm';
-        else if (blobType.includes('quicktime')) extension = 'mov';
-        else if (blobType.includes('ogg')) extension = 'ogg';
+        if (actualMimeType.includes('webm')) extension = 'webm';
+        else if (actualMimeType.includes('quicktime')) extension = 'mov';
+        else if (actualMimeType.includes('ogg')) extension = 'ogg';
   
         const file = new File([blob], `video_${Date.now()}.${extension}`, {
-          type: blobType
+          type: actualMimeType
         });
   
         const url = URL.createObjectURL(file);
@@ -192,27 +194,27 @@ export default function HomePage() {
         setStatus('Video pronto. Premi “Carica” per salvarlo.');
         setError('');
       };
-
-    recorder.start(250);
-    setIsRecording(true);
-    setRecordSeconds(0);
-    setStatus('Registrazione in corso...');
-    setError('');
-
-    timerRef.current = setInterval(() => {
-      setRecordSeconds((current) => {
-        const next = current + 1;
-        if (next >= MAX_VIDEO_SECONDS) {
-          stopRecording();
-        }
-        return next;
-      });
-    }, 1000);
-  } catch (err) {
-    console.error(err);
-    setError('Il browser non supporta la registrazione video su questo dispositivo.');
+  
+      recorder.start(250);
+      setIsRecording(true);
+      setRecordSeconds(0);
+      setStatus('Registrazione in corso...');
+      setError('');
+  
+      timerRef.current = setInterval(() => {
+        setRecordSeconds((current) => {
+          const next = current + 1;
+          if (next >= MAX_VIDEO_SECONDS) {
+            stopRecording();
+          }
+          return next;
+        });
+      }, 1000);
+    } catch (err) {
+      console.error(err);
+      setError('Il browser non supporta la registrazione video su questo dispositivo.');
+    }
   }
-}
 
   function stopRecording() {
     clearInterval(timerRef.current);
