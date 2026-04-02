@@ -242,8 +242,20 @@ export default function HomePage() {
         method: 'POST',
         body: formData
       });
-
-      const payload = await response.json();
+      
+      let payload = null;
+      const contentType = response.headers.get('content-type') || '';
+      
+      if (contentType.includes('application/json')) {
+        payload = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(text || 'Errore durante l’upload');
+      }
+      
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Upload fallito');
+      }
 
       if (!response.ok) {
         throw new Error(payload.error || 'Upload fallito');
