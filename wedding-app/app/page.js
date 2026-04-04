@@ -118,8 +118,6 @@ export default function HomePage() {
       canvas.height = video.videoHeight || 720;
 
       const context = canvas.getContext('2d');
-      context.translate(canvas.width, 0);
-      context.scale(-1, 1);
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92));
