@@ -308,6 +308,7 @@ export default function HomePage() {
           boxShadow: '0 12px 36px rgba(0,0,0,0.08)'
         }}
       >
+    
         <header style={{ textAlign: 'center', marginBottom: 20 }}>
           <p
             style={{
