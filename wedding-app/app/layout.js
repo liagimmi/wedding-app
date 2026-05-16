@@ -3,13 +3,6 @@ export const metadata = {
   description: 'Scatta foto e video del matrimonio e caricali in un attimo.'
 };
 
-export const viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false
-};
-
 export default function RootLayout({ children }) {
   return (
     <html lang="it">
