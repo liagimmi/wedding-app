@@ -325,7 +325,7 @@ export default function HomePage() {
             style={{
               margin: '8px 0 6px',
               fontSize: 32,
-              color: '#8A9A8B'
+              color: '#6F8071'
             }}
           >
             {APP_NAME}
@@ -381,12 +381,14 @@ export default function HomePage() {
               gap: 12
             }}
           >
+
             <button
-              onClick={takePhoto}
+              type="button"
+              onClick={toggleCamera}
               disabled={!isCameraReady || isRecording || uploading}
-              style={buttonStyle}
+              style={ghostButtonStyle}
             >
-              Scatta foto
+              {cameraMode === 'environment' ? 'Camera frontale' : 'Camera posteriore'}
             </button>
 
             {!isRecording ? (
@@ -407,13 +409,13 @@ export default function HomePage() {
             )}
 
             <button
-              type="button"
-              onClick={toggleCamera}
+              onClick={takePhoto}
               disabled={!isCameraReady || isRecording || uploading}
-              style={ghostButtonStyle}
+              style={buttonStyle}
             >
-              {cameraMode === 'environment' ? 'Camera frontale' : 'Camera posteriore'}
+              Scatta foto
             </button>
+                
           </div>
 
           <button
