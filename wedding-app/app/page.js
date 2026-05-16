@@ -444,7 +444,6 @@ export default function HomePage() {
             ref={fileInputRef}
             type="file"
             accept="image/*,video/*"
-            capture="environment"
             hidden
             onChange={onManualPick}
           />
