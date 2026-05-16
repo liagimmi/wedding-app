@@ -321,7 +321,15 @@ export default function HomePage() {
           >
             Benvenuti al matrimonio
           </p>
-          <h1 style={{ margin: '8px 0 6px', fontSize: 32 }}>{APP_NAME}</h1>
+          <h1
+            style={{
+              margin: '8px 0 6px',
+              fontSize: 32,
+              color: '#8A9A8B'
+            }}
+          >
+            {APP_NAME}
+          </h1>
           <p style={{ margin: 0, color: '#555' }}>
             Scatta una foto o registra un video per lasciare un ricordo agli sposi.
           </p>
