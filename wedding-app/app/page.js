@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'Wedding Memories';
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'GiamBetta';
 const MAX_VIDEO_SECONDS = 120;
 
 export default function HomePage() {
@@ -319,7 +319,7 @@ export default function HomePage() {
               color: '#836953'
             }}
           >
-            Benvenuti
+            Benvenuti al matrimonio
           </p>
           <h1 style={{ margin: '8px 0 6px', fontSize: 32 }}>{APP_NAME}</h1>
           <p style={{ margin: 0, color: '#555' }}>
@@ -474,22 +474,22 @@ export default function HomePage() {
 
 const buttonStyle = {
   border: 'none',
-  borderRadius: 16,
+  borderRadius: 20,
   padding: '16px 18px',
   fontSize: 16,
   fontWeight: 700,
   cursor: 'pointer',
-  background: '#d9b382',
-  color: '#1f1f1f'
+  background: '#8A9A8B',
+  color: '#ffffff'
 };
 
 const ghostButtonStyle = {
-  border: '1px solid #d9c8b2',
-  borderRadius: 16,
+  border: '1px solid #A8B5A2',
+  borderRadius: 20,
   padding: '14px 18px',
   fontSize: 15,
   fontWeight: 700,
   cursor: 'pointer',
-  background: '#fff',
-  color: '#4a3e34'
+  background: '#ffffff',
+  color: '#4A5D4F'
 };
