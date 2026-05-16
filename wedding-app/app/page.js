@@ -1,6 +1,12 @@
 'use client';
+import { Tangerine } from 'next/font/google';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+
+const tangerine = Tangerine({
+  subsets: ['latin'],
+  weight: ['400', '700']
+});
 
 const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'GiamBetta';
 const MAX_VIDEO_SECONDS = 120;
@@ -328,10 +334,12 @@ export default function HomePage() {
             Benvenuti al matrimonio
           </p>
           <h1
+            className={tangerine.className}
             style={{
               margin: '8px 0 6px',
-              fontSize: 32,
-              color: '#6F8071'
+              fontSize: 64,
+              color: '#8A9A8B',
+              fontWeight: 700
             }}
           >
             {APP_NAME}
@@ -397,6 +405,14 @@ export default function HomePage() {
               {cameraMode === 'environment' ? 'Camera frontale' : 'Camera posteriore'}
             </button>
 
+            <button
+              onClick={takePhoto}
+              disabled={!isCameraReady || isRecording || uploading}
+              style={buttonStyle}
+            >
+              Scatta foto
+            </button>
+
             {!isRecording ? (
               <button
                 onClick={startRecording}
@@ -413,15 +429,6 @@ export default function HomePage() {
                 Ferma ({recordSeconds}s)
               </button>
             )}
-
-            <button
-              onClick={takePhoto}
-              disabled={!isCameraReady || isRecording || uploading}
-              style={buttonStyle}
-            >
-              Scatta foto
-            </button>
-                
           </div>
 
           <button
