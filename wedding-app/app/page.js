@@ -288,11 +288,6 @@ export default function HomePage() {
         URL.revokeObjectURL(previewUrl);
       }
       setPreviewUrl('');
-      if (document.activeElement) {
-        document.activeElement.blur();
-      }
-      
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       console.error(err);
       setError(err.message || 'Si è verificato un errore durante il caricamento.');
